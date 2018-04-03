@@ -205,10 +205,30 @@ if(UNIX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+
 add_sample_client(Test "${TEST_SOURCE_FILES}" "drmgr_static")
 
-configure_DynamoRIO_static(Test)
-#use_DynamoRIO_static_client(myapp myclient)
+
+option(STATIC_DR "Statically link DynamoRio to avoid the need for dynamorio.dll" OFF)
+if (STATIC_DR)
+    configure_DynamoRIO_static(Test)
+    if (WIN32)
+        # Libraries are not properly sorted so the linking process fails in Windows. This fixes it making dynamorio_static being before libcmt
+        get_target_property(ALL_LIBS Test LINK_LIBRARIES)
+
+        foreach(LIB ${ALL_LIBS})
+            if(${LIB} MATCHES "libcmt")
+                list(APPEND MyList "dynamorio_static")
+            elseif(${LIB} MATCHES "dynamorio_static")
+                list(APPEND MyList "libcmt")
+            else()
+                list(APPEND MyList ${LIB})
+            endif()
+        endforeach()
+        
+        set_property(TARGET Test PROPERTY LINK_LIBRARIES ${MyList})
+    endif ()
+endif()
 
 if (WIN32)
   # XXX i#893: drwrap's asm isn't SEH compliant.
