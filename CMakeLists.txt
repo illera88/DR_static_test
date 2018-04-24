@@ -208,28 +208,6 @@ endif()
 
 add_sample_client(Test "${TEST_SOURCE_FILES}" "drmgr_static")
 
-
-option(STATIC_DR "Statically link DynamoRio to avoid the need for dynamorio.dll" OFF)
-if (STATIC_DR)
-    configure_DynamoRIO_static(Test)
-    if (WIN32)
-        # Libraries are not properly sorted so the linking process fails in Windows. This fixes it making dynamorio_static being before libcmt
-        get_target_property(ALL_LIBS Test LINK_LIBRARIES)
-
-        foreach(LIB ${ALL_LIBS})
-            if(${LIB} MATCHES "libcmt")
-                list(APPEND MyList "dynamorio_static")
-            elseif(${LIB} MATCHES "dynamorio_static")
-                list(APPEND MyList "libcmt")
-            else()
-                list(APPEND MyList ${LIB})
-            endif()
-        endforeach()
-        
-        set_property(TARGET Test PROPERTY LINK_LIBRARIES ${MyList})
-    endif ()
-endif()
-
 if (WIN32)
   # XXX i#893: drwrap's asm isn't SEH compliant.
   _DR_append_property_string(TARGET Test LINK_FLAGS "/safeseh:no")
